@@ -1,2 +1,2 @@
-const roles=[['Administrador','Acesso total'],['Orçamentista','Clientes, visitas, materiais e orçamentos'],['Responsável de obra','Obras, horas, materiais, fotos e extras'],['Financeiro','Caixa, compras, pagamentos e relatórios'],['Funcionário','Funções autorizadas']];
-export default function Equipa(){return <main style={{padding:32,fontFamily:'Arial'}}><h1>Equipa e permissões</h1><p>Cada funcionário terá login próprio e um perfil de acesso.</p><button>Novo funcionário</button><div style={{marginTop:25,display:'grid',gap:10}}>{roles.map(r=><div key={r[0]} style={{padding:16,border:'1px solid #ddd',borderRadius:10}}><strong>{r[0]}</strong><br/><small>{r[1]}</small></div>)}</div></main>}
+import {redirect} from 'next/navigation';
+export default function Equipa(){redirect('/funcionarios');}

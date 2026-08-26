@@ -1,2 +1,0 @@
-:HL["/royal-epoxi-app/_next/static/chunks/3g-ti_dni9-8-.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"obras","param":null,"prefetchHints":4192,"slots":{"children":{"name":"id","param":{"type":"d","key":"RE-2026-024","siblings":[]},"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}}}},"staleTime":300,"buildId":"Li3ZxtYlOul8kZL9alcAX"}
