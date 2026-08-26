@@ -1,0 +1,34 @@
+{
+  "version": 3,
+  "middleware": {
+    "/": {
+      "files": [
+        "server/edge/chunks/node_modules_next_dist_esm_build_templates_edge-wrapper_0_kjzx3.js",
+        "server/edge/chunks/[root-of-the-server]__0emy-m4._.js",
+        "server/edge/chunks/turbopack-node_modules_next_dist_esm_build_templates_edge-wrapper_0a9xbl8.js"
+      ],
+      "name": "middleware",
+      "page": "/",
+      "entrypoint": "server/edge/chunks/turbopack-node_modules_next_dist_esm_build_templates_edge-wrapper_0a9xbl8.js",
+      "matchers": [
+        {
+          "regexp": "^\\/royal-epoxi-app(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!api).*))(\\.json|\\.rsc|\\.segments\\/.+\\.segment\\.rsc)?[\\/#\\?]?$",
+          "originalSource": "/((?!api).*)"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "Li3ZxtYlOul8kZL9alcAX",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "Ec1pJIZPRuqX2sTvr18Np7JlpOuYD9mOmFzZZX0+CMc=",
+        "__NEXT_PREVIEW_MODE_ID": "5e5b6f51055a9d5ecf7991540dd350c5",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "bdce21e7fd5def06e3b3175c025e60841b82d71b5f3760dfc45eed26a98c9dd9",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "8d29bfe7ad5b505a3b905d8820b61e40c20b92b3a8973971676f57264f4f709f"
+      }
+    }
+  },
+  "sortedMiddleware": [
+    "/"
+  ],
+  "functions": {}
+}

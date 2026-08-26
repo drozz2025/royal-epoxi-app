@@ -1,0 +1,20 @@
+{
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/caixa/page": "app/caixa/page.js",
+  "/clientes/page": "app/clientes/page.js",
+  "/equipa/page": "app/equipa/page.js",
+  "/financeiro/page": "app/financeiro/page.js",
+  "/funcionarios/page": "app/funcionarios/page.js",
+  "/login/page": "app/login/page.js",
+  "/materiais/page": "app/materiais/page.js",
+  "/obras/[id]/page": "app/obras/[id]/page.js",
+  "/obras/page": "app/obras/page.js",
+  "/operacao/page": "app/operacao/page.js",
+  "/orcamentos/imprimir/page": "app/orcamentos/imprimir/page.js",
+  "/orcamentos/page": "app/orcamentos/page.js",
+  "/page": "app/page.js",
+  "/relatorios/page": "app/relatorios/page.js",
+  "/stock/page": "app/stock/page.js",
+  "/visitas/page": "app/visitas/page.js"
+}

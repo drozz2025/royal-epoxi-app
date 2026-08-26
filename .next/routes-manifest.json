@@ -1,0 +1,185 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "/royal-epoxi-app",
+  "redirects": [
+    {
+      "source": "/royal-epoxi-app",
+      "destination": "/royal-epoxi-app/",
+      "basePath": false,
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^/royal-epoxi-app$"
+    },
+    {
+      "source": "/:file((?!\\.well-known(?:/.*)?)(?:[^/]+/)*[^/]+\\.\\w+)/",
+      "destination": "/:file",
+      "internal": true,
+      "priority": true,
+      "missing": [
+        {
+          "type": "header",
+          "key": "x-nextjs-data"
+        }
+      ],
+      "statusCode": 308,
+      "regex": "^(?:/((?!\\.well-known(?:/.*)?)(?:[^/]+/)*[^/]+\\.\\w+))/$"
+    },
+    {
+      "source": "/:notfile((?!\\.well-known(?:/.*)?)(?:[^/]+/)*[^/\\.]+)",
+      "destination": "/:notfile/",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?!\\.well-known(?:/.*)?)(?:[^/]+/)*[^/\\.]+))$"
+    }
+  ],
+  "headers": [],
+  "onMatchHeaders": [],
+  "rewrites": {
+    "beforeFiles": [
+      {
+        "source": "/royal-epoxi-app//_next/:path+",
+        "destination": "/royal-epoxi-app/_next/:path+",
+        "regex": "^/royal-epoxi-app//_next(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))(?:/)?$"
+      }
+    ],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/obras/[id]",
+      "regex": "^/obras/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/obras/(?<nxtPid>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/caixa",
+      "regex": "^/caixa(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/caixa(?:/)?$"
+    },
+    {
+      "page": "/clientes",
+      "regex": "^/clientes(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/clientes(?:/)?$"
+    },
+    {
+      "page": "/equipa",
+      "regex": "^/equipa(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/equipa(?:/)?$"
+    },
+    {
+      "page": "/financeiro",
+      "regex": "^/financeiro(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/financeiro(?:/)?$"
+    },
+    {
+      "page": "/funcionarios",
+      "regex": "^/funcionarios(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/funcionarios(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/materiais",
+      "regex": "^/materiais(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/materiais(?:/)?$"
+    },
+    {
+      "page": "/obras",
+      "regex": "^/obras(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/obras(?:/)?$"
+    },
+    {
+      "page": "/operacao",
+      "regex": "^/operacao(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/operacao(?:/)?$"
+    },
+    {
+      "page": "/orcamentos",
+      "regex": "^/orcamentos(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/orcamentos(?:/)?$"
+    },
+    {
+      "page": "/orcamentos/imprimir",
+      "regex": "^/orcamentos/imprimir(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/orcamentos/imprimir(?:/)?$"
+    },
+    {
+      "page": "/relatorios",
+      "regex": "^/relatorios(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/relatorios(?:/)?$"
+    },
+    {
+      "page": "/stock",
+      "regex": "^/stock(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/stock(?:/)?$"
+    },
+    {
+      "page": "/visitas",
+      "regex": "^/visitas(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/visitas(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}
