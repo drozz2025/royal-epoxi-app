@@ -1,5 +1,10 @@
-import ObraDetalheClient from './ObraDetalheClient';
+import ObraDetailClient from './ObraDetailClient';
 
-export function generateStaticParams(){return [{id:'RE-2026-024'}]}
+export async function generateStaticParams() {
+  return [{ id: 'default' }];
+}
 
-export default function ObraDetalhe(){return <ObraDetalheClient/>}
+export default async function ObraDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  return <ObraDetailClient id={resolvedParams.id} />;
+}
