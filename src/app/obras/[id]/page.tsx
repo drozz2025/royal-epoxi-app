@@ -1,8 +1,5 @@
-'use client';
-import {useMemo,useState} from 'react';
-
-type MoneyField={label:string;value:number;set:(value:number)=>void};
+import ObraDetalheClient from './ObraDetalheClient';
 
 export function generateStaticParams(){return [{id:'RE-2026-024'}]}
 
-export default function ObraDetalhe(){const [sale,setSale]=useState(15800);const [materials,setMaterials]=useState(4200);const [labour,setLabour]=useState(3100);const [other,setOther]=useState(650);const cost=materials+labour+other;const profit=sale-cost;const margin=useMemo(()=>sale?profit/sale*100:0,[sale,profit]);const cards:[string,number][]=[['Venda',sale],['Materiais',materials],['Mão de obra',labour],['Outros custos',other],['Custo total',cost],['Lucro',profit]];const fields:MoneyField[]=[{label:'Venda',value:sale,set:setSale},{label:'Materiais',value:materials,set:setMaterials},{label:'Mão de obra',value:labour,set:setLabour},{label:'Outros custos',value:other,set:setOther}];return <main style={{padding:32,fontFamily:'Arial',maxWidth:1100}}><h1>Obra RE-2026-024</h1><p>Ficha completa da obra: medições, equipa, materiais, extras, custos e rentabilidade.</p><section style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:15}}>{cards.map(([l,v])=><div key={l} style={{padding:18,border:'1px solid #ddd',borderRadius:12}}><small>{l}</small><h2>€{v.toFixed(2)}</h2></div>)}</section><div style={{marginTop:18,padding:18,border:'1px solid #ddd',borderRadius:12}}><strong>Margem real: {margin.toFixed(1)}%</strong></div><h2>Custos reais</h2><div style={{display:'grid',gap:10,maxWidth:500}}>{fields.map(f=><label key={f.label}>{f.label}<input type="number" value={f.value} onChange={e=>f.set(+e.target.value)} style={{display:'block',width:'100%',padding:9}}/></label>)}</div><h2>Operações</h2><p>Registar horas, consumo de material, despesas, pagamentos, trabalhos extra e fotografias da obra.</p></main>}
+export default function ObraDetalhe(){return <ObraDetalheClient/>}
