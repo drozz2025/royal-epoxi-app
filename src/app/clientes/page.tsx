@@ -1,0 +1,1 @@
+export default function Clientes(){return <main style={{padding:32,fontFamily:'Arial'}}><h1>Clientes</h1><p>Gestão de clientes da Royal Epoxi.</p><button>Novo cliente</button><hr/><p>Aqui serão apresentados clientes, contactos, NIF, moradas, obras, orçamentos e histórico.</p></main>}
