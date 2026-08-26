@@ -1,0 +1,27 @@
+# Royal Epoxi implementation checklist
+
+- [x] Next.js application shell
+- [x] Dashboard
+- [x] Domain types and quote calculations
+- [x] Supabase schema
+- [x] Authentication entry point
+- [x] Baseline RLS
+- [x] Client data access
+- [x] Client creation screen
+- [x] Measurement calculator
+- [x] Materials model
+- [x] Projects model
+- [x] Finance dashboard foundation
+- [ ] Full CRUD for every entity
+- [ ] Role-aware authorization policies
+- [ ] Customer quote PDF generation
+- [ ] Quote acceptance/signature
+- [ ] Photo/document storage
+- [ ] Work diary and offline sync
+- [ ] Stock automatic reconciliation
+- [ ] Supplier/purchase workflow
+- [ ] Employee timesheets
+- [ ] Extra work/change orders
+- [ ] Automated profitability dashboard from live data
+- [ ] Production deployment
+- [ ] End-to-end tests
