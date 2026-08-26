@@ -46,7 +46,7 @@ export async function listVisits() {
 }
 
 export async function createVisit(data: {
-  client_id: string;
+  client_id?: string;
   date: string;
   address?: string;
   area_m2?: number;
@@ -86,7 +86,7 @@ export async function listQuotes() {
 }
 
 export async function createQuote(data: {
-  client_id: string;
+  client_id?: string;
   area_m2?: number;
   material_cost?: number;
   labour_cost?: number;
@@ -131,7 +131,7 @@ export async function getProject(id: string) {
 }
 
 export async function createProject(data: {
-  client_id: string;
+  client_id?: string;
   quote_id?: string;
   area_m2?: number;
   sale_price?: number;
@@ -224,7 +224,7 @@ export async function listPayments() {
 }
 
 export async function createPayment(data: {
-  client_id: string;
+  client_id?: string;
   project_id?: string;
   amount: number;
   payment_date: string;
@@ -264,4 +264,9 @@ export async function getDashboardStats() {
     cashBalance,
     error: projects.error || cash.error || quotes.error,
   };
+}
+
+export async function listProfiles() {
+  const client = db();
+  return client.from('profiles').select('*').order('created_at', { ascending: false });
 }

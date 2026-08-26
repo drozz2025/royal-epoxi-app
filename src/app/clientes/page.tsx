@@ -1,94 +1,119 @@
 'use client';
-
-import { useEffect, useState, type FormEvent } from 'react';
-import Layout from '@/components/Layout';
+import { useEffect, useState } from 'react';
 import { createClient, listClients } from '@/lib/db';
+import Layout from '@/components/Layout';
 
-type ClientRow = {
-  id: string;
-  name: string;
-  company?: string | null;
-  nif?: string | null;
-  phone?: string | null;
-  email?: string | null;
-  address?: string | null;
-  notes?: string | null;
-};
+type Client = { id: string; name: string; company?: string; nif?: string; phone?: string; email?: string; address?: string; notes?: string };
 
-export default function ClientesPage() {
-  const [clients, setClients] = useState<ClientRow[]>([]);
+export default function Clientes() {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [company, setCompany] = useState('');
+  const [nif, setNif] = useState('');
+  const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState('');
+  const [address, setAddress] = useState('');
+  const [notes, setNotes] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [form, setForm] = useState({ name: '', company: '', nif: '', phone: '', email: '', address: '', notes: '' });
 
-  async function loadData() {
-    setLoading(true);
-    setError('');
-    try {
-      const result = await listClients();
-      if (result.error) throw result.error;
-      setClients((result.data || []) as ClientRow[]);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar clientes.');
-    } finally {
-      setLoading(false);
-    }
+  async function load() {
+    try { const r = await listClients(); if (r.error) throw r.error; setClients((r.data || []) as Client[]); }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    setLoading(false);
   }
+  useEffect(() => { load(); }, []);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSaving(true);
-    setError('');
+  async function save(e: React.FormEvent) {
+    e.preventDefault(); setSaving(true); setError('');
     try {
-      const result = await createClient({
-        name: form.name,
-        company: form.company || undefined,
-        nif: form.nif || undefined,
-        phone: form.phone || undefined,
-        email: form.email || undefined,
-        address: form.address || undefined,
-        notes: form.notes || undefined,
-      });
-      if (result.error) throw result.error;
-      setForm({ name: '', company: '', nif: '', phone: '', email: '', address: '', notes: '' });
-      await loadData();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao criar cliente.');
-    } finally {
-      setSaving(false);
-    }
+      const r = await createClient({ name, company: company || undefined, nif: nif || undefined, phone: phone || undefined, email: email || undefined, address: address || undefined, notes: notes || undefined });
+      if (r.error) throw r.error;
+      setName(''); setCompany(''); setNif(''); setPhone(''); setEmail(''); setAddress(''); setNotes(''); setOpen(false); load();
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    setSaving(false);
   }
 
   return (
-    <Layout title="Clientes" subtitle="Base de clientes e contactos comerciais.">
-      {error ? <div style={{ padding: 14, borderRadius: 10, background: '#fff1f2', color: '#be123c', marginBottom: 18 }}>{error}</div> : null}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 380px) minmax(0, 1fr)', gap: 18 }}>
-        <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 14, padding: 20, boxShadow: '0 1px 4px rgba(16,24,40,.08)' }}>
-          <h2 style={{ marginTop: 0 }}>Novo cliente</h2>
-          <div style={{ display: 'grid', gap: 12 }}>
-            <label style={{ display: 'grid', gap: 6 }}>Nome<input required value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} style={{ padding: 10, borderRadius: 8, border: '1px solid #d1d5db' }} /></label>
-            <label style={{ display: 'grid', gap: 6 }}>Empresa<input value={form.company} onChange={(event) => setForm({ ...form, company: event.target.value })} style={{ padding: 10, borderRadius: 8, border: '1px solid #d1d5db' }} /></label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 }}>
-              <label style={{ display: 'grid', gap: 6 }}>NIF<input value={form.nif} onChange={(event) => setForm({ ...form, nif: event.target.value })} style={{ padding: 10, borderRadius: 8, border: '1px solid #d1d5db' }} /></label>
-              <label style={{ display: 'grid', gap: 6 }}>Telefone<input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} style={{ padding: 10, borderRadius: 8, border: '1px solid #d1d5db' }} /></label>
-            </div>
-            <label style={{ display: 'grid', gap: 6 }}>Email<input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} style={{ padding: 10, borderRadius: 8, border: '1px solid #d1d5db' }} /></label>
-            <label style={{ display: 'grid', gap: 6 }}>Morada<input value={form.address} onChange={(event) => setForm({ ...form, address: event.target.value })} style={{ padding: 10, borderRadius: 8, border: '1px solid #d1d5db' }} /></label>
-            <label style={{ display: 'grid', gap: 6 }}>Notas<textarea rows={3} value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} style={{ padding: 10, borderRadius: 8, border: '1px solid #d1d5db', resize: 'vertical' }} /></label>
-            <button type="submit" disabled={saving} style={{ padding: '12px 16px', borderRadius: 8, border: 0, background: '#101418', color: '#fff', cursor: 'pointer' }}>{saving ? 'A guardar...' : 'Criar cliente'}</button>
-          </div>
-        </form>
+    <Layout title="Clientes" subtitle="Gestão de clientes e histórico comercial."
+      actions={<button className="btn btn-primary" onClick={() => { setOpen(true); setError(''); }}>+ Novo cliente</button>}>
 
-        <section style={{ background: '#fff', borderRadius: 14, boxShadow: '0 1px 4px rgba(16,24,40,.08)', overflow: 'hidden' }}>
-          <div style={{ padding: 20, borderBottom: '1px solid #e5e7eb' }}><h2 style={{ margin: 0 }}>Clientes registados</h2></div>
-          {loading ? <div style={{ padding: 20 }}>A carregar...</div> : clients.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: '#6b7280' }}>Nenhum cliente registado.</div> : clients.map((client, index) => <div key={client.id} style={{ padding: 18, borderTop: index ? '1px solid #f1f5f9' : 'none' }}><div style={{ fontWeight: 700 }}>{client.name}</div>{client.company ? <div style={{ color: '#374151', marginTop: 4 }}>{client.company}</div> : null}<div style={{ color: '#6b7280', fontSize: 14, marginTop: 6 }}>{[client.nif, client.phone, client.email].filter(Boolean).join(' · ') || 'Sem contactos adicionais'}</div>{client.address ? <div style={{ color: '#6b7280', fontSize: 14, marginTop: 4 }}>{client.address}</div> : null}{client.notes ? <div style={{ color: '#9ca3af', fontSize: 13, marginTop: 8 }}>{client.notes}</div> : null}</div>)}
-        </section>
-      </div>
+      {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
+
+      {open && (
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div className="card-body">
+            <h3 style={{ fontSize: 16, marginBottom: 20 }}>Novo cliente</h3>
+            <form onSubmit={save}>
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                  <label className="form-label">Nome *</label>
+                  <input required className="form-input" value={name} onChange={e => setName(e.target.value)} placeholder="Nome completo" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Empresa</label>
+                  <input className="form-input" value={company} onChange={e => setCompany(e.target.value)} placeholder="Nome da empresa" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">NIF</label>
+                  <input className="form-input" value={nif} onChange={e => setNif(e.target.value)} placeholder="123456789" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Telefone</label>
+                  <input type="tel" className="form-input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+351 9xx xxx xxx" />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Email</label>
+                  <input type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} placeholder="email@exemplo.pt" />
+                </div>
+                <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                  <label className="form-label">Morada</label>
+                  <input className="form-input" value={address} onChange={e => setAddress(e.target.value)} placeholder="Rua, Nº, Localidade" />
+                </div>
+                <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                  <label className="form-label">Notas</label>
+                  <textarea className="form-input" value={notes} onChange={e => setNotes(e.target.value)} rows={2} placeholder="Observações internas..." style={{ resize: 'vertical' }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+                <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'A guardar…' : 'Guardar'}</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {loading ? <p style={{ color: '#6b7280' }}>A carregar...</p> : clients.length === 0 ? (
+        <div className="empty-state">
+          <div className="emoji">👥</div>
+          <h3>Nenhum cliente registado</h3>
+          <p>Clique em &quot;+ Novo cliente&quot; para adicionar o primeiro.</p>
+        </div>
+      ) : (
+        <div className="table-wrap">
+          <table className="pro">
+            <thead>
+              <tr>
+                <th>Nome</th><th>Empresa</th><th>NIF</th><th>Telefone</th><th>Email</th>
+              </tr>
+            </thead>
+            <tbody>
+              {clients.map(c => (
+                <tr key={c.id}>
+                  <td style={{ fontWeight: 600 }}>{c.name}</td>
+                  <td>{c.company || <span style={{ color: '#d1d5db' }}>—</span>}</td>
+                  <td>{c.nif || <span style={{ color: '#d1d5db' }}>—</span>}</td>
+                  <td>{c.phone || <span style={{ color: '#d1d5db' }}>—</span>}</td>
+                  <td>{c.email || <span style={{ color: '#d1d5db' }}>—</span>}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </Layout>
   );
 }

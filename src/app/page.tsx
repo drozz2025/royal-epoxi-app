@@ -1,98 +1,102 @@
 'use client';
-
-import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import Layout from '@/components/Layout';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 import { getDashboardStats } from '@/lib/db';
+import Layout from '@/components/Layout';
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(value);
-}
+type Stats = { activeProjects: number; totalInvoiced: number; totalProfit: number; pendingAmount: number; cashBalance: number };
 
-type DashboardStats = {
-  activeProjects: number;
-  totalInvoiced: number;
-  totalProfit: number;
-  pendingAmount: number;
-  cashBalance: number;
-};
+const quick = [
+  { href: '/clientes', label: 'Novo cliente', icon: '👥', color: '#eff6ff' },
+  { href: '/visitas', label: 'Nova visita', icon: '📅', color: '#f0fdf4' },
+  { href: '/orcamentos', label: 'Novo orçamento', icon: '📄', color: '#fefce8' },
+  { href: '/obras', label: 'Nova obra', icon: '🏗️', color: '#fdf4ff' },
+  { href: '/materiais', label: 'Materiais', icon: '🧴', color: '#fff7ed' },
+  { href: '/caixa', label: 'Registar caixa', icon: '💰', color: '#f0fdf4' },
+];
 
-const quickLinks = [
-  ['/clientes', 'Clientes'],
-  ['/visitas', 'Visitas'],
-  ['/orcamentos', 'Orçamentos'],
-  ['/obras', 'Obras'],
-  ['/materiais', 'Materiais'],
-  ['/financeiro', 'Financeiro'],
-] as const;
-
-export default function HomePage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
+export default function Home() {
+  const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     getDashboardStats()
-      .then((result) => {
-        if (result.error) {
-          throw result.error;
-        }
-        setStats(result);
-      })
-      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Erro ao carregar dashboard.'))
+      .then(s => { if (s.error) setError(String(s.error)); else setStats(s); })
+      .catch(e => setError(e.message))
       .finally(() => setLoading(false));
   }, []);
 
-  const cards = [
-    ['Faturação', stats ? formatCurrency(stats.totalInvoiced) : '—', 'Obras concluídas'],
-    ['Lucro', stats ? formatCurrency(stats.totalProfit) : '—', 'Baseado em custos reais'],
-    ['Obras em curso', stats ? String(stats.activeProjects) : '—', 'Planeamento e execução'],
-    ['Por receber', stats ? formatCurrency(stats.pendingAmount) : '—', 'Pagamentos e propostas pendentes'],
-  ] as const;
+  const fmt = (n: number) => n.toLocaleString('pt-PT', { minimumFractionDigits: 0 });
+
+  const statCards = [
+    { label: 'Faturação acumulada', value: stats ? `€ ${fmt(stats.totalInvoiced)}` : '—', sub: 'Obras concluídas', icon: '📈', bg: '#eff6ff', color: '#1e40af' },
+    { label: 'Lucro bruto', value: stats ? `€ ${fmt(stats.totalProfit)}` : '—', sub: 'Faturação − custos', icon: '💹', bg: '#f0fdf4', color: '#166534' },
+    { label: 'Obras em curso', value: stats ? String(stats.activeProjects) : '—', sub: 'Planeamento + em obra', icon: '🏗️', bg: '#fdf4ff', color: '#7c3aed' },
+    { label: 'Por receber', value: stats ? `€ ${fmt(stats.pendingAmount)}` : '—', sub: 'Orçamentos pendentes', icon: '⏳', bg: '#fefce8', color: '#854d0e' },
+  ];
 
   return (
-    <Layout title="Dashboard" subtitle="Gestão operacional da Royal Epoxi.">
-      {error ? (
-        <div style={{ padding: 14, borderRadius: 10, background: '#fff1f2', border: '1px solid #fecdd3', color: '#be123c', marginBottom: 20 }}>
-          {error}
+    <Layout title="Dashboard" subtitle="Gestão operacional da Royal Epoxi">
+      {error && <div className="alert alert-error" style={{ marginBottom: 20 }}>{error}</div>}
+      {!stats && !loading && !error && (
+        <div className="alert alert-warning" style={{ marginBottom: 20 }}>
+          ⚠️ Configure <strong>NEXT_PUBLIC_SUPABASE_URL</strong> e <strong>NEXT_PUBLIC_SUPABASE_ANON_KEY</strong> para ativar dados reais.
         </div>
-      ) : null}
+      )}
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 24 }}>
-        {cards.map(([label, value, hint]) => (
-          <div key={label} style={{ background: '#fff', padding: 22, borderRadius: 14, boxShadow: '0 1px 4px rgba(16,24,40,0.08)' }}>
-            <div style={{ color: '#6b7280', fontSize: 13, fontWeight: 600 }}>{label}</div>
-            <div style={{ fontSize: 30, fontWeight: 700, margin: '10px 0 6px', minHeight: 38 }}>{loading ? '…' : value}</div>
-            <div style={{ color: '#9ca3af', fontSize: 12 }}>{hint}</div>
+      {/* Stat cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 24 }}>
+        {statCards.map(s => (
+          <div key={s.label} className="stat-card">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div>
+                <div className="stat-label">{s.label}</div>
+                <div className="stat-value" style={{ color: loading ? '#d1d5db' : undefined }}>
+                  {loading ? '…' : s.value}
+                </div>
+                <div className="stat-sub">{s.sub}</div>
+              </div>
+              <div className="stat-icon" style={{ background: s.bg, fontSize: 20 }}>{s.icon}</div>
+            </div>
           </div>
         ))}
-      </section>
+      </div>
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16 }}>
-        <div style={{ background: '#fff', padding: 22, borderRadius: 14, boxShadow: '0 1px 4px rgba(16,24,40,0.08)' }}>
-          <h2 style={{ marginTop: 0 }}>Navegação rápida</h2>
-          <div style={{ display: 'grid', gap: 10 }}>
-            {quickLinks.map(([href, label]) => (
-              <Link
-                key={href}
-                href={href}
-                style={{ textDecoration: 'none', color: '#101418', border: '1px solid #e5e7eb', borderRadius: 10, padding: '12px 14px', fontWeight: 600 }}
-              >
-                {label}
-              </Link>
-            ))}
+      {/* Bottom grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+        {/* Quick actions */}
+        <div className="card">
+          <div className="card-body">
+            <h2 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: '#111827' }}>Acesso rápido</h2>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              {quick.map(q => (
+                <Link key={q.href} href={q.href} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', borderRadius: 10, background: q.color, border: '1px solid rgba(0,0,0,.05)', fontSize: 13, fontWeight: 600, color: '#1f2937', transition: 'opacity .15s' }}>
+                  <span style={{ fontSize: 18 }}>{q.icon}</span> {q.label}
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div style={{ background: '#fff', padding: 22, borderRadius: 14, boxShadow: '0 1px 4px rgba(16,24,40,0.08)' }}>
-          <h2 style={{ marginTop: 0 }}>Estado da integração</h2>
-          <p style={{ color: '#6b7280', lineHeight: 1.6 }}>
-            O dashboard apresenta totais reais vindos do Supabase. Quando não existir configuração ou dados, os cartões mostram “—” e mensagens de contexto.
-          </p>
-          {!loading && !stats ? <p style={{ color: '#b45309', marginBottom: 0 }}>Sem dados disponíveis.</p> : null}
-          {stats ? <p style={{ color: '#6b7280', marginBottom: 0 }}>Saldo de caixa atual: {formatCurrency(stats.cashBalance)}</p> : null}
+        {/* About */}
+        <div className="card" style={{ background: 'linear-gradient(135deg, #0f1117 0%, #1a1f2e 100%)' }}>
+          <div className="card-body">
+            <div style={{ fontSize: 24, fontWeight: 800, color: '#fff', marginBottom: 8 }}>
+              ROYAL <span style={{ color: '#d7a83f' }}>EPOXI</span>
+            </div>
+            <p style={{ color: '#9ca3af', fontSize: 14, lineHeight: 1.7, marginBottom: 16 }}>
+              Sistema de gestão interna para pavimentos e resinas epóxi. Clientes, visitas, orçamentos, obras, materiais, stock e finanças integrados.
+            </p>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {['Clientes', 'Orçamentos', 'Obras', 'Stock', 'Caixa'].map(tag => (
+                <span key={tag} style={{ padding: '3px 10px', borderRadius: 20, background: 'rgba(215,168,63,.15)', color: '#d7a83f', fontSize: 12, fontWeight: 600 }}>{tag}</span>
+              ))}
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
     </Layout>
   );
 }

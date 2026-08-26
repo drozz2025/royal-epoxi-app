@@ -1,71 +1,110 @@
 'use client';
-import {useEffect,useState,useMemo} from 'react';
-import {listCashMovements,listProjects} from '@/lib/db';
-import PageLayout from '@/components/PageLayout';
+import { useEffect, useState } from 'react';
+import { listPayments, createPayment, listProjects } from '@/lib/db';
+import Layout from '@/components/Layout';
 
-type Movement={id:string;date:string;type:'IN'|'OUT';category:string;amount:number;description:string};
-type Project={id:string;sale_price:number;planned_cost:number;actual_cost:number;status:string};
+type Payment = { id: string; amount: number; payment_method?: string; payment_date: string; notes?: string; projects?: { number?: string; clients?: { name: string } } };
+type Project = { id: string; number?: string; clients?: { name: string } };
 
-export default function Financeiro(){
-  const [movs,setMovs]=useState<Movement[]>([]);
-  const [projects,setProjects]=useState<Project[]>([]);
-  const [period,setPeriod]=useState(new Date().toISOString().slice(0,7));
-  const [error,setError]=useState('');
-  const [loading,setLoading]=useState(true);
+export default function Financeiro() {
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [open, setOpen] = useState(false);
+  const [projectId, setProjectId] = useState('');
+  const [amount, setAmount] = useState<number | ''>('');
+  const [method, setMethod] = useState('');
+  const [payDate, setPayDate] = useState(new Date().toISOString().split('T')[0]);
+  const [notes, setNotes] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
-  useEffect(()=>{
-    Promise.all([listCashMovements(),listProjects()])
-      .then(([m,p])=>{
-        if(m.error)throw m.error;
-        if(p.error)throw p.error;
-        setMovs((m.data||[]) as Movement[]);
-        setProjects((p.data||[]) as Project[]);
-      })
-      .catch(e=>setError(e instanceof Error?e.message:String(e)))
-      .finally(()=>setLoading(false));
-  },[]);
+  async function load() {
+    try { const [p, pr] = await Promise.all([listPayments(), listProjects()]); if (p.error) throw p.error; if (pr.error) throw pr.error; setPayments((p.data || []) as Payment[]); setProjects((pr.data || []) as Project[]); }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
 
-  const stats=useMemo(()=>{
-    const periodMovs=movs.filter(m=>m.date.startsWith(period));
-    const ins=periodMovs.filter(m=>m.type==='IN').reduce((s,m)=>s+Number(m.amount),0);
-    const outs=periodMovs.filter(m=>m.type==='OUT').reduce((s,m)=>s+Number(m.amount),0);
-    const invoiced=projects.filter(p=>p.status==='CONCLUIDA').reduce((s,p)=>s+Number(p.sale_price),0);
-    const costs=projects.filter(p=>p.status==='CONCLUIDA').reduce((s,p)=>s+Number(p.actual_cost),0);
-    return {ins,outs,balance:ins-outs,invoiced,profit:invoiced-costs,result:ins-outs};
-  },[movs,projects,period]);
+  async function save(e: React.FormEvent) {
+    e.preventDefault(); if (!projectId || amount === '') { setError('Preencher campos obrigatórios'); return; }
+    setSaving(true); setError('');
+    try {
+      const r = await createPayment({ project_id: projectId, amount: Number(amount), method: method || undefined, payment_date: payDate, notes: notes || undefined });
+      if (r.error) throw r.error;
+      setOpen(false); setProjectId(''); setAmount(''); setMethod(''); setPayDate(new Date().toISOString().split('T')[0]); setNotes(''); load();
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    setSaving(false);
+  }
 
-  const fmt=(n:number)=>`€${n.toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2})}`;
-  const card={background:'#fff',borderRadius:12,padding:20,boxShadow:'0 1px 4px rgba(0,0,0,.08)'} as const;
+  const total = payments.reduce((s, p) => s + p.amount, 0);
+  const fmt = (n: number) => `€${Number(n).toLocaleString('pt-PT', { minimumFractionDigits: 2 })}`;
 
-  return <PageLayout title="Financeiro" subtitle="Resumo financeiro, entradas, saídas e resultado.">
-    <div style={{marginBottom:20,display:'flex',alignItems:'center',gap:12}}>
-      <label style={{fontSize:14,color:'#6c737b'}}>Período:</label>
-      <input type="month" value={period} onChange={e=>setPeriod(e.target.value)} style={{padding:'8px 12px',borderRadius:6,border:'1px solid #ddd',fontSize:14}}/>
-    </div>
-    {error&&<div style={{padding:12,background:'#fff0f0',border:'1px solid #fcc',borderRadius:8,marginBottom:16,color:'#c00'}}>{error}</div>}
-    {loading?<p>A carregar...</p>:<>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))',gap:16,marginBottom:24}}>
-        {([['Entradas (caixa)',stats.ins,'#166534'],['Saídas (caixa)',stats.outs,'#991b1b'],['Saldo de caixa',stats.balance,stats.balance>=0?'#166534':'#991b1b'],['Faturado (obras)',stats.invoiced,'#101418'],['Lucro acumulado',stats.profit,stats.profit>=0?'#166534':'#991b1b']] as [string,number,string][]).map(([l,v,c])=>(
-          <div key={l} style={card}>
-            <div style={{fontSize:13,color:'#6c737b'}}>{l}</div>
-            <div style={{fontSize:22,fontWeight:700,marginTop:6,color:c}}>{fmt(v)}</div>
+  return (
+    <Layout title="Financeiro" subtitle="Registo de pagamentos recebidos por obra."
+      actions={<button className="btn btn-primary" onClick={() => { setOpen(true); setError(''); }}>+ Registar pagamento</button>}>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+        <div className="stat-card"><div className="stat-label">Total recebido</div><div className="stat-value" style={{ color: '#166534' }}>{fmt(total)}</div><div className="stat-sub">{payments.length} pagamentos registados</div></div>
+        <div className="stat-card"><div className="stat-label">Obras com pagamento</div><div className="stat-value">{new Set(payments.map(p => p.projects?.number || p.id)).size}</div><div className="stat-sub">obras distintas</div></div>
+      </div>
+
+      {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
+
+      {open && (
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div className="card-body">
+            <h3 style={{ fontSize: 16, marginBottom: 20 }}>Registar pagamento</h3>
+            <form onSubmit={save}>
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+                <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                  <label className="form-label">Obra *</label>
+                  <select required className="form-input" value={projectId} onChange={e => setProjectId(e.target.value)}>
+                    <option value="">Selecionar...</option>
+                    {projects.map(p => <option key={p.id} value={p.id}>{p.number || p.id.slice(0, 8)} — {p.clients?.name || 'N/A'}</option>)}
+                  </select>
+                </div>
+                <div className="form-group"><label className="form-label">Valor (€) *</label><input required type="number" step="0.01" min="0" className="form-input" value={amount} onChange={e => setAmount(e.target.value ? Number(e.target.value) : '')} /></div>
+                <div className="form-group"><label className="form-label">Data *</label><input required type="date" className="form-input" value={payDate} onChange={e => setPayDate(e.target.value)} /></div>
+                <div className="form-group">
+                  <label className="form-label">Método</label>
+                  <select className="form-input" value={method} onChange={e => setMethod(e.target.value)}>
+                    <option value="">— Selecionar —</option>
+                    {['Transferência', 'Multibanco', 'Numerário', 'MB Way', 'Cheque'].map(m => <option key={m}>{m}</option>)}
+                  </select>
+                </div>
+                <div className="form-group" style={{ gridColumn: '1/-1' }}><label className="form-label">Notas</label><input className="form-input" value={notes} onChange={e => setNotes(e.target.value)} /></div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+                <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'A guardar…' : 'Guardar'}</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>Cancelar</button>
+              </div>
+            </form>
           </div>
-        ))}
-      </div>
-      <div style={{background:'#fff',borderRadius:12,padding:24,boxShadow:'0 1px 4px rgba(0,0,0,.08)'}}>
-        <h3 style={{margin:'0 0 16px',fontSize:16}}>Movimentos do período ({period})</h3>
-        {movs.filter(m=>m.date.startsWith(period)).length===0?<p style={{color:'#8b949e',textAlign:'center',padding:20}}>Nenhum movimento neste período.</p>:<table style={{width:'100%',borderCollapse:'collapse'}}>
-          <thead style={{background:'#f8f9fa'}}><tr>{['Data','Tipo','Categoria','Descrição','Valor'].map(h=><th key={h} style={{padding:'10px 14px',textAlign:'left',fontSize:13,fontWeight:600,color:'#6c737b'}}>{h}</th>)}</tr></thead>
-          <tbody>{movs.filter(m=>m.date.startsWith(period)).map((m,i)=><tr key={m.id} style={{borderTop:i?'1px solid #f0f0f0':'none'}}>
-            <td style={{padding:'10px 14px',fontSize:13,color:'#6c737b'}}>{m.date}</td>
-            <td style={{padding:'10px 14px'}}><span style={{padding:'2px 8px',borderRadius:10,background:m.type==='IN'?'#dcfce7':'#fee2e2',color:m.type==='IN'?'#166534':'#991b1b',fontSize:12,fontWeight:600}}>{m.type==='IN'?'Entrada':'Saída'}</span></td>
-            <td style={{padding:'10px 14px',fontSize:13,color:'#6c737b'}}>{m.category}</td>
-            <td style={{padding:'10px 14px'}}>{m.description||'—'}</td>
-            <td style={{padding:'10px 14px',fontWeight:600,color:m.type==='IN'?'#166534':'#991b1b'}}>{m.type==='OUT'?'-':''}{fmt(Number(m.amount))}</td>
-          </tr>)}
-          </tbody>
-        </table>}
-      </div>
-    </>}
-  </PageLayout>;
+        </div>
+      )}
+
+      {loading ? <p style={{ color: '#6b7280' }}>A carregar...</p> : payments.length === 0 ? (
+        <div className="empty-state"><div className="emoji">💳</div><h3>Nenhum pagamento registado</h3><p>Clique em &quot;+ Registar pagamento&quot; para começar.</p></div>
+      ) : (
+        <div className="table-wrap">
+          <table className="pro">
+            <thead><tr><th>Data</th><th>Obra</th><th>Cliente</th><th>Método</th><th style={{ textAlign: 'right' }}>Valor</th><th>Notas</th></tr></thead>
+            <tbody>
+              {payments.map(p => (
+                <tr key={p.id}>
+                  <td>{new Date(p.payment_date).toLocaleDateString('pt-PT')}</td>
+                  <td style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 700 }}>{p.projects?.number || '—'}</td>
+                  <td style={{ fontWeight: 600 }}>{p.projects?.clients?.name || '—'}</td>
+                  <td>{p.payment_method ? <span className="badge badge-blue" style={{ textTransform: 'none' }}>{p.payment_method}</span> : '—'}</td>
+                  <td style={{ textAlign: 'right', fontWeight: 700, color: '#166534' }}>{fmt(p.amount)}</td>
+                  <td style={{ color: '#6b7280' }}>{p.notes || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Layout>
+  );
 }

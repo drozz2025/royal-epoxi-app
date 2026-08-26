@@ -1,33 +1,49 @@
 'use client';
-import PageLayout from '@/components/PageLayout';
+import { useEffect, useState } from 'react';
+import { listProfiles } from '@/lib/db';
+import Layout from '@/components/Layout';
 
-const roles=[
-  {id:'ADMIN',label:'Administrador',desc:'Acesso total a todos os módulos e dados.'},
-  {id:'ORCAMENTISTA',label:'Orçamentista',desc:'Clientes, visitas, medições, materiais e orçamentos.'},
-  {id:'OBRA',label:'Responsável de obra',desc:'Obras, horas, materiais, fotos e extras.'},
-  {id:'FINANCEIRO',label:'Financeiro',desc:'Caixa, compras, pagamentos e relatórios.'},
-  {id:'FUNCIONARIO',label:'Funcionário',desc:'Tarefas e registos autorizados pelo gestor.'},
-];
+type Profile = { id: string; full_name?: string; email?: string; role: string; created_at: string };
 
-export default function Funcionarios(){
-  return <PageLayout title="Equipa & Permissões" subtitle="Funções e níveis de acesso dos colaboradores.">
-    <div style={{background:'#fff3cd',border:'1px solid #ffc107',borderRadius:8,padding:16,marginBottom:24,fontSize:14}}>
-      <strong>ℹ️ Como adicionar funcionários:</strong><br/>
-      Para convidar um novo utilizador, aceda ao <strong>Supabase Dashboard → Authentication → Users → Invite user</strong>. Após o primeiro login, o perfil é criado automaticamente e pode ser atualizado com a função correta.
-    </div>
-    <div style={{background:'#fff',borderRadius:12,boxShadow:'0 1px 4px rgba(0,0,0,.08)',overflow:'hidden'}}>
-      <table style={{width:'100%',borderCollapse:'collapse'}}>
-        <thead style={{background:'#f8f9fa'}}>
-          <tr>{['Função','Identificador','Acesso'].map(h=><th key={h} style={{padding:'12px 16px',textAlign:'left',fontSize:13,fontWeight:600,color:'#6c737b'}}>{h}</th>)}</tr>
-        </thead>
-        <tbody>
-          {roles.map((r,i)=><tr key={r.id} style={{borderTop:i?'1px solid #f0f0f0':'none'}}>
-            <td style={{padding:'12px 16px',fontWeight:600}}>{r.label}</td>
-            <td style={{padding:'12px 16px'}}><code style={{background:'#f0f0f0',padding:'2px 6px',borderRadius:4,fontSize:12}}>{r.id}</code></td>
-            <td style={{padding:'12px 16px',color:'#6c737b',fontSize:14}}>{r.desc}</td>
-          </tr>)}
-        </tbody>
-      </table>
-    </div>
-  </PageLayout>;
+const roleBadge: Record<string, string> = { ADMIN: 'badge-red', ORCAMENTISTA: 'badge-blue', OBRA: 'badge-yellow', FINANCEIRO: 'badge-green', FUNCIONARIO: 'badge-gray' };
+const roleLabel: Record<string, string> = { ADMIN: 'Administrador', ORCAMENTISTA: 'Orçamentista', OBRA: 'Obra', FINANCEIRO: 'Financeiro', FUNCIONARIO: 'Funcionário' };
+
+export default function Funcionarios() {
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    listProfiles().then(r => { if (r.error) setError(String(r.error)); else setProfiles((r.data || []) as Profile[]); }).catch(e => setError(e.message)).finally(() => setLoading(false));
+  }, []);
+
+  return (
+    <Layout title="Equipa" subtitle="Utilizadores registados no sistema.">
+      {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
+
+      <div className="alert alert-warning" style={{ marginBottom: 20 }}>
+        ℹ️ Os utilizadores são adicionados através do painel do <strong>Supabase Auth</strong>. Após o primeiro login, o perfil é criado automaticamente e pode ser editado aqui.
+      </div>
+
+      {loading ? <p style={{ color: '#6b7280' }}>A carregar...</p> : profiles.length === 0 ? (
+        <div className="empty-state"><div className="emoji">👤</div><h3>Nenhum utilizador registado</h3><p>Os utilizadores aparecem aqui após o primeiro login.</p></div>
+      ) : (
+        <div className="table-wrap">
+          <table className="pro">
+            <thead><tr><th>Nome</th><th>Email</th><th>Função</th><th>Desde</th></tr></thead>
+            <tbody>
+              {profiles.map(p => (
+                <tr key={p.id}>
+                  <td style={{ fontWeight: 600 }}>{p.full_name || '—'}</td>
+                  <td style={{ color: '#6b7280' }}>{p.email || '—'}</td>
+                  <td><span className={`badge ${roleBadge[p.role] || 'badge-gray'}`}>{roleLabel[p.role] || p.role}</span></td>
+                  <td>{new Date(p.created_at).toLocaleDateString('pt-PT')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </Layout>
+  );
 }

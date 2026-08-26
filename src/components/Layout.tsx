@@ -1,85 +1,54 @@
 'use client';
-
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Sidebar from './Sidebar';
 import { supabase } from '@/lib/supabase';
 
-export default function Layout({
-  children,
-  title,
-  subtitle,
-}: {
+export default function Layout({ children, title, subtitle, actions }: {
   children: ReactNode;
   title: string;
   subtitle?: string;
+  actions?: ReactNode;
 }) {
   const [user, setUser] = useState('');
-  const [mobile, setMobile] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const sidebarRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
-    const syncViewport = () => setMobile(window.innerWidth < 920);
-    syncViewport();
-    window.addEventListener('resize', syncViewport);
-    return () => window.removeEventListener('resize', syncViewport);
-  }, []);
-
-  useEffect(() => {
-    if (!supabase) {
-      setUser('');
-      return;
-    }
+    if (!supabase) { setUser(''); return; }
     supabase.auth.getUser().then(({ data }) => setUser(data.user?.email || ''));
   }, []);
 
-  return (
-    <div style={{ minHeight: '100vh', background: '#f4f6f8', fontFamily: 'Arial, sans-serif', color: '#101418' }}>
-      {mobile ? (
-        <>
-          <div
-            style={{
-              position: 'sticky',
-              top: 0,
-              zIndex: 20,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '14px 16px',
-              background: '#101418',
-              color: '#fff',
-            }}
-          >
-            <div>
-              <div style={{ fontWeight: 700 }}>ROYAL <span style={{ color: '#d7a83f' }}>EPOXI</span></div>
-              <div style={{ fontSize: 12, color: '#9ca3af' }}>{title}</div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setMenuOpen((value) => !value)}
-              style={{ background: 'transparent', color: '#fff', border: '1px solid #374151', borderRadius: 8, padding: '8px 12px' }}
-            >
-              Menu
-            </button>
-          </div>
-          {menuOpen && (
-            <div style={{ position: 'relative', zIndex: 25 }}>
-              <Sidebar user={user} mobile onNavigate={() => setMenuOpen(false)} />
-            </div>
-          )}
-        </>
-      ) : (
-        <div style={{ position: 'fixed', inset: '0 auto 0 0', width: 240, zIndex: 10 }}>
-          <Sidebar user={user} />
-        </div>
-      )}
+  // toggle 'open' class on sidebar element
+  useEffect(() => {
+    const el = document.querySelector('.sidebar') as HTMLElement | null;
+    if (el) el.classList.toggle('open', sidebarOpen);
+  }, [sidebarOpen]);
 
-      <main style={{ marginLeft: mobile ? 0 : 240, padding: mobile ? 16 : 32 }}>
-        <header style={{ marginBottom: 24 }}>
-          <h1 style={{ margin: 0, fontSize: mobile ? 28 : 32 }}>{title}</h1>
-          {subtitle ? <p style={{ margin: '8px 0 0', color: '#6b7280' }}>{subtitle}</p> : null}
+  return (
+    <div style={{ minHeight: '100vh', background: '#f3f4f6' }}>
+      <div
+        className={`sidebar-overlay${sidebarOpen ? ' open' : ''}`}
+        onClick={() => setSidebarOpen(false)}
+      />
+      <Sidebar user={user} onNavigate={() => setSidebarOpen(false)} />
+
+      <div className="app-main">
+        <header className="page-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <button type="button" className="mobile-menu-btn" onClick={() => setSidebarOpen(o => !o)} aria-label="Menu">
+              <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden>
+                <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="page-header-left">
+              <h1>{title}</h1>
+              {subtitle && <p>{subtitle}</p>}
+            </div>
+          </div>
+          {actions && <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>{actions}</div>}
         </header>
-        {children}
-      </main>
+        <main className="page-content">{children}</main>
+      </div>
     </div>
   );
 }

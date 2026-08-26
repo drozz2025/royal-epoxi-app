@@ -1,102 +1,111 @@
 'use client';
-
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState } from 'react';
+import { listMaterialMovements, createMaterialMovement, listMaterials } from '@/lib/db';
 import Layout from '@/components/Layout';
-import { createMaterialMovement, listMaterialMovements, listMaterials } from '@/lib/db';
 
-type MaterialRow = {
-  id: string;
-  name: string;
-  unit: string;
-  stock?: number | null;
-  min_stock?: number | null;
-};
+type Mov = { id: string; type: string; quantity: number; unit_cost?: number; notes?: string; reason?: string; created_at: string; materials?: { name: string; unit: string } };
+type Material = { id: string; name: string; unit: string; stock?: number; min_stock?: number };
 
-type MovementRow = {
-  id: string;
-  type?: string | null;
-  quantity?: number | null;
-  reason?: string | null;
-  created_at?: string | null;
-  materials?: { name?: string | null } | null;
-};
-
-export default function StockPage() {
-  const [materials, setMaterials] = useState<MaterialRow[]>([]);
-  const [movements, setMovements] = useState<MovementRow[]>([]);
+export default function Stock() {
+  const [movements, setMovements] = useState<Mov[]>([]);
+  const [materials, setMaterials] = useState<Material[]>([]);
+  const [open, setOpen] = useState(false);
+  const [materialId, setMaterialId] = useState('');
+  const [movType, setMovType] = useState('IN');
+  const [qty, setQty] = useState<number | ''>('');
+  const [unitCost, setUnitCost] = useState<number | ''>('');
+  const [notes, setNotes] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const [form, setForm] = useState({ material_id: '', type: 'OUT' as 'IN' | 'OUT', quantity: '', reason: '' });
 
-  async function loadData() {
-    setLoading(true);
-    setError('');
+  async function load() {
+    try { const [mv, mt] = await Promise.all([listMaterialMovements(), listMaterials()]); if (mv.error) throw mv.error; if (mt.error) throw mt.error; setMovements((mv.data || []) as Mov[]); setMaterials((mt.data || []) as Material[]); }
+    catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    setLoading(false);
+  }
+  useEffect(() => { load(); }, []);
+
+  async function save(e: React.FormEvent) {
+    e.preventDefault(); if (!materialId || qty === '') { setError('Preencher campos obrigatórios'); return; }
+    setSaving(true); setError('');
     try {
-      const [materialsResult, movementsResult] = await Promise.all([listMaterials(), listMaterialMovements()]);
-      if (materialsResult.error) throw materialsResult.error;
-      if (movementsResult.error) throw movementsResult.error;
-      setMaterials((materialsResult.data || []) as MaterialRow[]);
-      setMovements((movementsResult.data || []) as MovementRow[]);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao carregar stock.');
-    } finally {
-      setLoading(false);
-    }
+      const r = await createMaterialMovement({ material_id: materialId, type: movType as 'IN' | 'OUT', quantity: Number(qty), reason: notes || undefined });
+      if (r.error) throw r.error;
+      setOpen(false); setMaterialId(''); setQty(''); setUnitCost(''); setNotes(''); load();
+    } catch (e) { setError(e instanceof Error ? e.message : String(e)); }
+    setSaving(false);
   }
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setSaving(true);
-    setError('');
-    try {
-      const result = await createMaterialMovement({
-        material_id: form.material_id,
-        type: form.type,
-        quantity: Number(form.quantity || 0),
-        reason: form.reason || undefined,
-      });
-      if (result.error) throw result.error;
-      setForm({ material_id: '', type: 'OUT', quantity: '', reason: '' });
-      await loadData();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Erro ao guardar movimento.');
-    } finally {
-      setSaving(false);
-    }
-  }
+  const lowStock = materials.filter(m => m.min_stock !== undefined && (m.stock ?? 0) <= m.min_stock);
 
   return (
-    <Layout title="Stock" subtitle="Níveis de stock e movimentos de materiais.">
-      {error ? <div style={{ padding: 14, borderRadius: 10, background: '#fff1f2', color: '#be123c', marginBottom: 18 }}>{error}</div> : null}
-      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 340px) minmax(0, 1fr)', gap: 18 }}>
-        <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 14, padding: 20, boxShadow: '0 1px 4px rgba(16,24,40,.08)' }}>
-          <h2 style={{ marginTop: 0 }}>Registar movimento</h2>
-          <div style={{ display: 'grid', gap: 12 }}>
-            <label style={{ display: 'grid', gap: 6 }}>Material<select required value={form.material_id} onChange={(event) => setForm({ ...form, material_id: event.target.value })} style={{ padding: 10, borderRadius: 8, border: '1px solid #d1d5db' }}><option value="">Selecionar...</option>{materials.map((material) => <option key={material.id} value={material.id}>{material.name}</option>)}</select></label>
-            <label style={{ display: 'grid', gap: 6 }}>Tipo<select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value as 'IN' | 'OUT' })} style={{ padding: 10, borderRadius: 8, border: '1px solid #d1d5db' }}><option value="IN">Entrada</option><option value="OUT">Saída</option></select></label>
-            <label style={{ display: 'grid', gap: 6 }}>Quantidade<input required type="number" min="0" step="0.01" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: event.target.value })} style={{ padding: 10, borderRadius: 8, border: '1px solid #d1d5db' }} /></label>
-            <label style={{ display: 'grid', gap: 6 }}>Motivo<input value={form.reason} onChange={(event) => setForm({ ...form, reason: event.target.value })} style={{ padding: 10, borderRadius: 8, border: '1px solid #d1d5db' }} /></label>
-            <button type="submit" disabled={saving || !materials.length} style={{ padding: '12px 16px', borderRadius: 8, border: 0, background: '#101418', color: '#fff', cursor: 'pointer' }}>{saving ? 'A guardar...' : 'Guardar movimento'}</button>
-          </div>
-        </form>
+    <Layout title="Stock" subtitle="Controlo de movimentos e inventário de materiais."
+      actions={<button className="btn btn-primary" onClick={() => { setOpen(true); setError(''); }}>+ Registar movimento</button>}>
 
-        <div style={{ display: 'grid', gap: 18 }}>
-          <section style={{ background: '#fff', borderRadius: 14, boxShadow: '0 1px 4px rgba(16,24,40,.08)', overflow: 'hidden' }}>
-            <div style={{ padding: 20, borderBottom: '1px solid #e5e7eb' }}><h2 style={{ margin: 0 }}>Níveis de stock</h2></div>
-            {loading ? <div style={{ padding: 20 }}>A carregar...</div> : materials.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: '#6b7280' }}>Sem materiais registados.</div> : materials.map((material, index) => { const stock = Number(material.stock || 0); const minStock = Number(material.min_stock || 0); const low = stock <= minStock; return <div key={material.id} style={{ padding: 18, borderTop: index ? '1px solid #f1f5f9' : 'none', display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}><div><div style={{ fontWeight: 700 }}>{material.name}</div><div style={{ color: '#6b7280', fontSize: 14 }}>{material.unit}</div></div><div style={{ textAlign: 'right' }}><div style={{ fontWeight: 700, color: low ? '#b91c1c' : undefined }}>{stock} {material.unit}</div><div style={{ color: low ? '#b91c1c' : '#6b7280', fontSize: 12 }}>{low ? `Abaixo do mínimo (${minStock})` : `Mínimo ${minStock}`}</div></div></div>; })}
-          </section>
-
-          <section style={{ background: '#fff', borderRadius: 14, boxShadow: '0 1px 4px rgba(16,24,40,.08)', overflow: 'hidden' }}>
-            <div style={{ padding: 20, borderBottom: '1px solid #e5e7eb' }}><h2 style={{ margin: 0 }}>Movimentos recentes</h2></div>
-            {loading ? <div style={{ padding: 20 }}>A carregar...</div> : movements.length === 0 ? <div style={{ padding: 40, textAlign: 'center', color: '#6b7280' }}>Sem movimentos registados.</div> : movements.map((movement, index) => <div key={movement.id} style={{ padding: 18, borderTop: index ? '1px solid #f1f5f9' : 'none', display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}><div><div style={{ fontWeight: 700 }}>{movement.materials?.name || 'Material'}</div><div style={{ color: '#6b7280', fontSize: 14 }}>{movement.reason || 'Sem motivo'}</div></div><div style={{ textAlign: 'right' }}><div style={{ fontWeight: 700 }}>{movement.type} · {movement.quantity || 0}</div><div style={{ color: '#6b7280', fontSize: 12 }}>{movement.created_at ? new Date(movement.created_at).toLocaleDateString('pt-PT') : '—'}</div></div></div>)}
-          </section>
+      {lowStock.length > 0 && (
+        <div className="alert alert-warning" style={{ marginBottom: 16 }}>
+          ⚠️ <strong>{lowStock.length} material(is) com stock baixo:</strong> {lowStock.map(m => m.name).join(', ')}
         </div>
-      </div>
+      )}
+
+      {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
+
+      {open && (
+        <div className="card" style={{ marginBottom: 24 }}>
+          <div className="card-body">
+            <h3 style={{ fontSize: 16, marginBottom: 20 }}>Novo movimento de stock</h3>
+            <form onSubmit={save}>
+              <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr 1fr' }}>
+                <div className="form-group" style={{ gridColumn: '1/-1' }}>
+                  <label className="form-label">Material *</label>
+                  <select required className="form-input" value={materialId} onChange={e => setMaterialId(e.target.value)}>
+                    <option value="">Selecionar...</option>
+                    {materials.map(m => <option key={m.id} value={m.id}>{m.name} (stock: {m.stock ?? 0} {m.unit})</option>)}
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Tipo *</label>
+                  <select className="form-input" value={movType} onChange={e => setMovType(e.target.value)}>
+                    <option value="IN">Entrada</option>
+                    <option value="OUT">Saída</option>
+                    
+                  </select>
+                </div>
+                <div className="form-group"><label className="form-label">Quantidade *</label><input required type="number" step="0.1" min="0" className="form-input" value={qty} onChange={e => setQty(e.target.value ? Number(e.target.value) : '')} /></div>
+                <div className="form-group"><label className="form-label">Custo unitário (€)</label><input type="number" step="0.01" min="0" className="form-input" value={unitCost} onChange={e => setUnitCost(e.target.value ? Number(e.target.value) : '')} /></div>
+                <div className="form-group" style={{ gridColumn: '1/-1' }}><label className="form-label">Notas</label><input className="form-input" value={notes} onChange={e => setNotes(e.target.value)} /></div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+                <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'A guardar…' : 'Guardar'}</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>Cancelar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {loading ? <p style={{ color: '#6b7280' }}>A carregar...</p> : movements.length === 0 ? (
+        <div className="empty-state"><div className="emoji">📦</div><h3>Nenhum movimento registado</h3><p>Clique em &quot;+ Registar movimento&quot; para começar.</p></div>
+      ) : (
+        <div className="table-wrap">
+          <table className="pro">
+            <thead><tr><th>Data</th><th>Material</th><th>Tipo</th><th>Qtd</th><th>Custo unit.</th><th>Notas</th></tr></thead>
+            <tbody>
+              {movements.map(m => (
+                <tr key={m.id}>
+                  <td>{new Date(m.created_at).toLocaleDateString('pt-PT')}</td>
+                  <td style={{ fontWeight: 600 }}>{m.materials?.name || '—'}</td>
+                  <td><span className={`badge ${m.type === 'IN' ? 'badge-green' : 'badge-red'}`}>{m.type}</span></td>
+                  <td style={{ fontWeight: 600 }}>{m.quantity} {m.materials?.unit || ''}</td>
+                  <td>{m.unit_cost ? `€${Number(m.unit_cost).toFixed(2)}` : '—'}</td>
+                  <td style={{ color: '#6b7280', maxWidth: 200 }}>{m.reason || '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </Layout>
   );
 }
