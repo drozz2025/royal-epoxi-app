@@ -1,0 +1,22 @@
+alter table profiles enable row level security;
+alter table clients enable row level security;
+alter table materials enable row level security;
+alter table quotes enable row level security;
+alter table quote_lines enable row level security;
+alter table projects enable row level security;
+alter table work_logs enable row level security;
+alter table expenses enable row level security;
+alter table payments enable row level security;
+alter table stock_movements enable row level security;
+alter table audit_log enable row level security;
+
+create policy "authenticated users can read clients" on clients for select to authenticated using (true);
+create policy "authenticated users can create clients" on clients for insert to authenticated with check (true);
+create policy "authenticated users can read materials" on materials for select to authenticated using (true);
+create policy "authenticated users can create materials" on materials for insert to authenticated with check (true);
+create policy "authenticated users can read quotes" on quotes for select to authenticated using (true);
+create policy "authenticated users can create quotes" on quotes for insert to authenticated with check (true);
+create policy "authenticated users can read projects" on projects for select to authenticated using (true);
+create policy "authenticated users can create projects" on projects for insert to authenticated with check (true);
+create policy "authenticated users can read payments" on payments for select to authenticated using (true);
+create policy "authenticated users can create payments" on payments for insert to authenticated with check (true);
