@@ -4,5 +4,10 @@ export type ProjectStatus='PLANEAMENTO'|'AGENDADA'|'EM_OBRA'|'PAUSADA'|'CONCLUID
 export interface Client{id:string;name:string;company?:string;nif?:string;phone?:string;email?:string;address?:string;notes?:string}
 export interface Material{id:string;name:string;unit:string;cost:number;yieldPerUnit?:number;wastePct?:number;stock:number;minStock:number}
 export interface QuoteLine{description:string;quantity:number;unit:string;unitPrice:number;cost:number}
-export interface Quote{id:string;clientId:string;number:string;status:QuoteStatus;lines:QuoteLine[];directCost:number;salePrice:number;marginPct:number;validUntil?:string}
+export interface Quote{id:string;clientId:string;number:string;status:QuoteStatus;lines:QuoteLine[];directCost:number;labourCost:number;otherCost:number;salePrice:number;marginPct:number;discount:number;vatPct:number;validUntil?:string}
 export interface Project{id:string;quoteId?:string;clientId:string;number:string;status:ProjectStatus;areaM2:number;plannedCost:number;actualCost:number;salePrice:number;startDate?:string;endDate?:string}
+export interface WorkLog{id:string;projectId:string;date:string;employeeId:string;hours:number;materialCost:number;notes?:string}
+export interface ExtraWork{id:string;projectId:string;description:string;quantity:number;unitPrice:number;approved:boolean}
+export interface CashEntry{id:string;date:string;type:'IN'|'OUT';category:string;amount:number;projectId?:string;description:string}
+export interface Supplier{id:string;name:string;nif?:string;phone?:string;email?:string}
+export interface Purchase{id:string;supplierId:string;projectId?:string;date:string;total:number;status:'PENDING'|'RECEIVED'|'CANCELLED'}
