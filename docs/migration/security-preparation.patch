@@ -1,0 +1,45 @@
+--- a/src/lib/session.functions.ts
++++ b/src/lib/session.functions.ts
+@@ -1,4 +1,5 @@
+ import { createServerFn } from "@tanstack/react-start";
++import { getRequest } from "@tanstack/react-start/server";
+ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+ import {
+   buildSessionPolicy,
+@@ -81,7 +82,11 @@
+     const idleMs = now - lastSeen;
+     if (idleMs >= policy.timeoutMs) {
+       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+-      await supabaseAdmin.auth.admin.signOut(context.userId, "global");
++      // The authentication middleware already validated this bearer token.
++      const accessToken = getRequest().headers.get("authorization")?.slice(7);
++      if (!accessToken) throw new Error("Unauthorized");
++      const { error } = await supabaseAdmin.auth.admin.signOut(accessToken, "global");
++      if (error) throw new Error("Não foi possível revogar a sessão.");
+       return { expired: true as const, policy, remainingMs: 0 };
+     }
+ 
+--- a/src/lib/biometric.ts
++++ b/src/lib/biometric.ts
+@@ -65,7 +65,10 @@
+ export function syncBiometricSession(session: Session | null): void {
+   if (typeof window === "undefined") return;
+   if (!getBiometricAccount()) return;
+-  if (!session?.refresh_token) return;
++  if (!session?.refresh_token) {
++    localStorage.removeItem(SESS_KEY);
++    return;
++  }
+   const payload: StoredSession = {
+     access_token: session.access_token,
+     refresh_token: session.refresh_token,
+--- a/src/hooks/use-auth.tsx
++++ b/src/hooks/use-auth.tsx
+@@ -102,6 +102,7 @@
+     if (typeof window !== "undefined") {
+       window.localStorage.removeItem(LAST_ACTIVITY_STORAGE_KEY);
+     }
++    syncBiometricSession(null);
+     await supabase.auth.signOut();
+     setProfile(null);
+     setRoles([]);

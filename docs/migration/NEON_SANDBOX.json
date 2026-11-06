@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-06",
+  "organization_plan_verified": "free",
+  "project_id": "wandering-fire-93495120",
+  "branch_id": "br-polished-wildflower-b97deyx4",
+  "branch_name": "migration-sandbox",
+  "region_id": "aws-eu-central-1",
+  "database": "royal_epoxis",
+  "bucket": "royal-files",
+  "bucket_access": "private",
+  "storage_test": {
+    "upload": true,
+    "download_sha256_equal": true,
+    "anonymous_http_status": 403
+  },
+  "production_data_imported": false,
+  "production_app_connected": false,
+  "cutover_authorized": false,
+  "credentials_stored_in_repository": false,
+  "pending": [
+    "verified complete source backup and restore",
+    "authentication and permission equivalence",
+    "frontend hosting",
+    "production authorization"
+  ]
+}
