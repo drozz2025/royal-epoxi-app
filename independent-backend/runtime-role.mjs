@@ -1,0 +1,4 @@
+export async function requireRestrictedDatabaseRole(connection){
+ const row=(await connection.query("SELECT r.rolsuper,r.rolbypassrls,r.rolcreaterole,r.rolcreatedb,r.rolinherit,EXISTS(SELECT 1 FROM pg_database WHERE datname=current_database() AND datdba=r.oid) AS owns_database,EXISTS(SELECT 1 FROM pg_namespace WHERE nspname IN ('public','independent_auth') AND nspowner=r.oid) AS owns_schema,EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','independent_auth') AND c.relowner=r.oid) AS owns_objects,EXISTS(SELECT 1 FROM pg_auth_members m JOIN pg_roles granted ON granted.oid=m.roleid WHERE m.member=r.oid AND granted.rolname<>'authenticated') AS unexpected_membership FROM pg_roles r WHERE r.rolname=current_user")).rows[0];
+ if(!row||Object.values(row).some(Boolean))throw new Error('Overprivileged runtime role');
+}
